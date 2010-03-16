@@ -1,0 +1,12 @@
+C:\Documents and Settings\jcallen\My Documents\Visual Studio 2008\Projects\GatherInstalledApplications\GatherInstalledApplications\bin\Debug\GatherInstalledApplications.exe
+C:\Documents and Settings\jcallen\My Documents\Visual Studio 2008\Projects\GatherInstalledApplications\GatherInstalledApplications\bin\Debug\GatherInstalledApplications.pdb
+C:\Documents and Settings\jcallen\My Documents\Visual Studio 2008\Projects\GatherInstalledApplications\GatherInstalledApplications\obj\Debug\ResolveAssemblyReference.cache
+C:\Documents and Settings\jcallen\My Documents\Visual Studio 2008\Projects\GatherInstalledApplications\GatherInstalledApplications\obj\Debug\GatherInstalledApplications.Form1.resources
+C:\Documents and Settings\jcallen\My Documents\Visual Studio 2008\Projects\GatherInstalledApplications\GatherInstalledApplications\obj\Debug\GatherInstalledApplications.Properties.Resources.resources
+C:\Documents and Settings\jcallen\My Documents\Visual Studio 2008\Projects\GatherInstalledApplications\GatherInstalledApplications\obj\Debug\GatherInstalledApplications.csproj.GenerateResource.Cache
+C:\Documents and Settings\jcallen\My Documents\Visual Studio 2008\Projects\GatherInstalledApplications\GatherInstalledApplications\obj\Debug\GatherInstalledApplications.exe
+C:\Documents and Settings\jcallen\My Documents\Visual Studio 2008\Projects\GatherInstalledApplications\GatherInstalledApplications\obj\Debug\GatherInstalledApplications.pdb
+C:\Documents and Settings\jcallen\My Documents\Visual Studio 2008\Projects\GatherInstalledApplications\GatherInstalledApplications\bin\Debug\GatherInstalledApplications.exe.manifest
+C:\Documents and Settings\jcallen\My Documents\Visual Studio 2008\Projects\GatherInstalledApplications\GatherInstalledApplications\bin\Debug\GatherInstalledApplications.application
+C:\Documents and Settings\jcallen\My Documents\Visual Studio 2008\Projects\GatherInstalledApplications\GatherInstalledApplications\obj\Debug\GatherInstalledApplications.exe.manifest
+C:\Documents and Settings\jcallen\My Documents\Visual Studio 2008\Projects\GatherInstalledApplications\GatherInstalledApplications\obj\Debug\GatherInstalledApplications.application
