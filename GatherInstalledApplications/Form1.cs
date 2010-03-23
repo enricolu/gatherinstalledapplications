@@ -8,9 +8,9 @@ using System.Text;
 using System.Windows.Forms;
 
 namespace GatherInstalledApplications {
-    public partial class Form1 : Form {
+    public partial class Form1 : Form, IDisposable {
 
-        public enum ProductUpdate { PSE, DDC, NONE };
+        public enum ProductUpdate { PSE, DDC, VC, ESX, NONE };
 
         private System.IO.StreamWriter sw;
         private String ddcPatches = "";
@@ -19,14 +19,21 @@ namespace GatherInstalledApplications {
 
         public Form1() {
             InitializeComponent();
+            progressBarControl1.Properties.PercentView = true;
             progressBarControl1.Properties.Step = 1;
             progressBarControl1.Properties.Minimum = 0;
+            //this.simpleButtonStart.Enabled = false;
             
             sw = new System.IO.StreamWriter("appver.csv");
         }
 
         private void simpleButtonStart_Click(object sender, EventArgs e) {
-            processStartButton();
+            if (memoEditvCenter.Lines.Length != 0) {
+                ProcessStartButtonVCOnly();
+            }
+            if (!(checkedComboBoxEditVendors.Properties.Items.Count == 0 || memoEditServers.Lines.Length == 0)) {
+                processStartButton();
+            }
         }
 
         private void simpleButtonQuit_Click(object sender, EventArgs e) {
@@ -51,6 +58,18 @@ namespace GatherInstalledApplications {
         private void StepProgressBar() {
             progressBarControl1.PerformStep();
             progressBarControl1.Update();
+        }
+        private void WriteToCSV(_VMware.ESXHostInfo ehi, ProductUpdate pu) {
+            switch(pu) {
+                case ProductUpdate.ESX:
+                    sw.WriteLine("{0},{1},{2},{3},{4}", "VMware", "VMware ESX",ehi.Version, ehi.Build, ehi.Name);
+                    sw.Flush();
+                    break;
+                case ProductUpdate.VC:
+                    sw.WriteLine("{0},{1},{2},{3},{4}", "VMware", "VMware vCenter", ehi.Version, ehi.Build, ehi.Name);
+                    sw.Flush();
+                    break;
+            }
         }
         private void WriteToCSV(RegistryQuery.AppNameVer anv, String server, String appVendor, ProductUpdate pu) {
 
@@ -77,20 +96,47 @@ namespace GatherInstalledApplications {
                     WriteToCSV(anv, server, appVendor, ProductUpdate.DDC);
                 }
                 else if (anv.DisplayName.Contains("Citrix Presentation Server for Windows")) {
-                    sw.WriteLine("{0},{1},{2},{3},{4}", appVendor, anv.DisplayName, anv.DisplayVersion, psePatches, server);
+                    WriteToCSV(anv, server, appVendor, ProductUpdate.PSE);
                 }
                 else {
                     WriteToCSV(anv, server, appVendor, ProductUpdate.NONE);
                 }
             }
         }
+        #region IDisposable Members
 
+        public new void Dispose() {
+            throw new NotSupportedException("");
+        }
+
+        #endregion
+
+
+        /// <summary>
+        /// Here for debugging only...
+        /// </summary>
+        private void ProcessStartButtonVCOnly() {
+
+            _VMware vmware = new _VMware(this);
+            int vCenterServerCount = memoEditvCenter.Lines.Length;
+            
+            foreach (String vcServer in memoEditvCenter.Lines) {
+                //vmware.QueryVCBuildAsync(vcServer);
+                vmware.QueryESXBuildAsync(vcServer);
+
+                //System.Collections.ArrayList alEsxHostInfo = vmware.QueryESXBuild(vcServer);
+                //foreach (_VMware.ESXHostInfo ehi in alEsxHostInfo) {
+                //    WriteToCSV(ehi, ProductUpdate.ESX);
+                //}
+            }
+        }
 
         private void processStartButton() {
             int appVendorCount = checkedComboBoxEditVendors.Properties.Items.Count;
             int serverCount = memoEditServers.Lines.Length;
+            int vCenterServerCount = memoEditvCenter.Lines.Length;
 
-            
+
             progressBarControl1.Properties.Maximum = appVendorCount * serverCount;
 
             foreach (String server in memoEditServers.Lines) {

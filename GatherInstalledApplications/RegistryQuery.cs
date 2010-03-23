@@ -41,10 +41,7 @@ namespace GatherInstalledApplications {
             try {
                 uninstallKey =
                     remoteLocalMachines.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall");
-
                 subUninstallKeyNames = uninstallKey.GetSubKeyNames();
-
-                //Console.WriteLine("SubKeyLength {0}", subUninstallKeyNames.Length);
             }
             catch (Exception e) {
                 Console.Error.WriteLine(e.Message);
@@ -59,9 +56,6 @@ namespace GatherInstalledApplications {
                     String displayName = (String)rk.GetValue("DisplayName");
                     Object displayVersion = rk.GetValue("DisplayVersion");
                     if (displayName != null) {
-                        
-                        //Console.WriteLine("{0},{1},{2},{3},{4}", subUninstallKey, displayName, appVendor, displayVersion, _serverName);
-                        
                         if (displayName.Contains(appVendor)) {
                             AppNameVer anv = new AppNameVer();
                             anv.DisplayName = displayName;

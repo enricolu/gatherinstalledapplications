@@ -30,6 +30,8 @@
             this.progressBarControl1 = new DevExpress.XtraEditors.ProgressBarControl();
             this.simpleButtonStart = new DevExpress.XtraEditors.SimpleButton();
             this.simpleButtonQuit = new DevExpress.XtraEditors.SimpleButton();
+            this.memoEditvCenter = new DevExpress.XtraEditors.MemoEdit();
+            this.groupControl3 = new DevExpress.XtraEditors.GroupControl();
             ((System.ComponentModel.ISupportInitialize)(this.checkedComboBoxEditVendors.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.groupControl1)).BeginInit();
             this.groupControl1.SuspendLayout();
@@ -37,6 +39,9 @@
             ((System.ComponentModel.ISupportInitialize)(this.groupControl2)).BeginInit();
             this.groupControl2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.progressBarControl1.Properties)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.memoEditvCenter.Properties)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.groupControl3)).BeginInit();
+            this.groupControl3.SuspendLayout();
             this.SuspendLayout();
             // 
             // checkedComboBoxEditVendors
@@ -82,12 +87,12 @@
             // 
             this.progressBarControl1.Location = new System.Drawing.Point(12, 344);
             this.progressBarControl1.Name = "progressBarControl1";
-            this.progressBarControl1.Size = new System.Drawing.Size(258, 18);
+            this.progressBarControl1.Size = new System.Drawing.Size(521, 29);
             this.progressBarControl1.TabIndex = 4;
             // 
             // simpleButtonStart
             // 
-            this.simpleButtonStart.Location = new System.Drawing.Point(276, 12);
+            this.simpleButtonStart.Location = new System.Drawing.Point(458, 12);
             this.simpleButtonStart.Name = "simpleButtonStart";
             this.simpleButtonStart.Size = new System.Drawing.Size(75, 23);
             this.simpleButtonStart.TabIndex = 5;
@@ -96,18 +101,35 @@
             // 
             // simpleButtonQuit
             // 
-            this.simpleButtonQuit.Location = new System.Drawing.Point(276, 41);
+            this.simpleButtonQuit.Location = new System.Drawing.Point(458, 44);
             this.simpleButtonQuit.Name = "simpleButtonQuit";
             this.simpleButtonQuit.Size = new System.Drawing.Size(75, 23);
             this.simpleButtonQuit.TabIndex = 6;
             this.simpleButtonQuit.Text = "Quit";
             this.simpleButtonQuit.Click += new System.EventHandler(this.simpleButtonQuit_Click);
             // 
+            // memoEditvCenter
+            // 
+            this.memoEditvCenter.Location = new System.Drawing.Point(5, 25);
+            this.memoEditvCenter.Name = "memoEditvCenter";
+            this.memoEditvCenter.Size = new System.Drawing.Size(247, 235);
+            this.memoEditvCenter.TabIndex = 2;
+            // 
+            // groupControl3
+            // 
+            this.groupControl3.Controls.Add(this.memoEditvCenter);
+            this.groupControl3.Location = new System.Drawing.Point(276, 73);
+            this.groupControl3.Name = "groupControl3";
+            this.groupControl3.Size = new System.Drawing.Size(257, 265);
+            this.groupControl3.TabIndex = 4;
+            this.groupControl3.Text = "VMware vCenter";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(360, 370);
+            this.ClientSize = new System.Drawing.Size(545, 383);
+            this.Controls.Add(this.groupControl3);
             this.Controls.Add(this.simpleButtonQuit);
             this.Controls.Add(this.simpleButtonStart);
             this.Controls.Add(this.progressBarControl1);
@@ -124,6 +146,9 @@
             ((System.ComponentModel.ISupportInitialize)(this.groupControl2)).EndInit();
             this.groupControl2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.progressBarControl1.Properties)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.memoEditvCenter.Properties)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.groupControl3)).EndInit();
+            this.groupControl3.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -137,6 +162,8 @@
         private DevExpress.XtraEditors.ProgressBarControl progressBarControl1;
         private DevExpress.XtraEditors.SimpleButton simpleButtonStart;
         private DevExpress.XtraEditors.SimpleButton simpleButtonQuit;
+        private DevExpress.XtraEditors.MemoEdit memoEditvCenter;
+        private DevExpress.XtraEditors.GroupControl groupControl3;
 
     }
 }

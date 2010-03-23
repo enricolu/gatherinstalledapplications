@@ -1,0 +1,13 @@
+﻿            //pipeline = run.CreatePipeline();
+
+            //using (pipeline) {
+            //    pipeline.Commands.AddScript(sbConnectVIServer.ToString());
+
+            //    vcCollection = pipeline.Invoke();
+            //    foreach (PSObject vc in vcCollection) {
+            //        VMware.VimAutomation.Types.VIServer viserver = (VMware.VimAutomation.Types.VIServer)vc.BaseObject;
+            //        vci.Build = viserver.Build;
+            //        vci.Name = viserver.Name;
+            //        vci.Version = viserver.Version;
+            //    }
+            //}
