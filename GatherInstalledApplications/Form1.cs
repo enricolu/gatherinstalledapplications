@@ -16,6 +16,7 @@ namespace GatherInstalledApplications {
         private String ddcPatches = "";
         private String psePatches = "";
         private System.Collections.ArrayList alAppNameVer = null;
+        private _VMware vmware;
 
         public Form1() {
             InitializeComponent();
@@ -28,6 +29,7 @@ namespace GatherInstalledApplications {
         }
 
         private void simpleButtonStart_Click(object sender, EventArgs e) {
+            this.simpleButtonStart.Enabled = false;
             if (memoEditvCenter.Lines.Length != 0) {
                 ProcessStartButtonVCOnly();
             }
@@ -59,14 +61,14 @@ namespace GatherInstalledApplications {
             progressBarControl1.PerformStep();
             progressBarControl1.Update();
         }
-        private void WriteToCSV(_VMware.ESXHostInfo ehi, ProductUpdate pu) {
-            switch(pu) {
-                case ProductUpdate.ESX:
-                    sw.WriteLine("{0},{1},{2},{3},{4}", "VMware", "VMware ESX",ehi.Version, ehi.Build, ehi.Name);
+        private void WriteToCSV(_VMware.BuildVersion bv) {
+            switch(bv.hostType) {
+                case _VMware.HostType.ESX:
+                    sw.WriteLine("{0},{1},{2},{3},{4}", "VMware", "VMware ESX",bv.Version, bv.Build, bv.Name);
                     sw.Flush();
                     break;
-                case ProductUpdate.VC:
-                    sw.WriteLine("{0},{1},{2},{3},{4}", "VMware", "VMware vCenter", ehi.Version, ehi.Build, ehi.Name);
+                case _VMware.HostType.VC:
+                    sw.WriteLine("{0},{1},{2},{3},{4}", "VMware", "VMware vCenter", bv.Version, bv.Build, bv.Name);
                     sw.Flush();
                     break;
             }
@@ -103,31 +105,20 @@ namespace GatherInstalledApplications {
                 }
             }
         }
-        #region IDisposable Members
-
-        public new void Dispose() {
-            throw new NotSupportedException("");
-        }
-
-        #endregion
-
-
-        /// <summary>
-        /// Here for debugging only...
-        /// </summary>
         private void ProcessStartButtonVCOnly() {
 
-            _VMware vmware = new _VMware(this);
+            vmware = new _VMware(this);
+            vmware.OnDataReady += new _VMware.DataEventReady(vmware_OnDataReady);
             int vCenterServerCount = memoEditvCenter.Lines.Length;
             
             foreach (String vcServer in memoEditvCenter.Lines) {
-                //vmware.QueryVCBuildAsync(vcServer);
-                vmware.QueryESXBuildAsync(vcServer);
+                vmware.QueryVCESXBuildAsync(vcServer);
+            }
+        }
 
-                //System.Collections.ArrayList alEsxHostInfo = vmware.QueryESXBuild(vcServer);
-                //foreach (_VMware.ESXHostInfo ehi in alEsxHostInfo) {
-                //    WriteToCSV(ehi, ProductUpdate.ESX);
-                //}
+        void vmware_OnDataReady() {
+            foreach (_VMware.BuildVersion bv in vmware.VcEsxBv) {
+                WriteToCSV(bv);
             }
         }
 

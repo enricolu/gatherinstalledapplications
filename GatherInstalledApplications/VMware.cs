@@ -48,30 +48,40 @@ namespace GatherInstalledApplications {
         //public event DataReadyDelegate OnDataReady;
         //private DataReadyDelegate synchDataReady;
 
-        public struct ESXHostInfo {
+        public enum HostType { VC, ESX };
+        public struct BuildVersion {
             public String Name, Build, Version;
+            public HostType hostType;
         }
 
-        public struct VCInfo {
-            public String Name, Build, Version;
-        }
+        //public struct VCInfo {
+        //    public String Name, Build, Version;
+        //}
 
         private PSSnapInException warn;
         private Runspace run;
-        private Pipeline pipeline;
-        private Boolean _completed = false;
-        private int count = 0;
+        //private Pipeline pipeline;
+        //private Boolean _completed = false;
+        //private int count = 0;
         private ISynchronizeInvoke invoker;
 
         private PipelineExecutor pipelineExecutor;
-        private _VMware.VCInfo vci;
+        private _VMware.BuildVersion bv;
 
         System.Collections.ArrayList alEsxHostInfo = new System.Collections.ArrayList();
 
-
-        public Boolean CompletedInvoke {
-            get { return _completed; }
+        public delegate void DataEventReady();
+        public event DataEventReady OnDataReady;
+        public System.Collections.ArrayList VcEsxBv {
+            get { return alEsxHostInfo; }
         }
+        public _VMware.BuildVersion VcBv {
+            get { return bv; }
+        }
+
+        //public Boolean CompletedInvoke {
+        //    get { return _completed; }
+        //}
 
         public _VMware() {
             run = RunspaceFactory.CreateRunspace();
@@ -87,11 +97,11 @@ namespace GatherInstalledApplications {
 
         private void pipelineExecutor_OnDataEnd(PipelineExecutor sender) {
             if (sender.Pipeline.PipelineStateInfo.State == PipelineState.Failed) {
-                //AppendLine(string.Format("Error in script: {0}", sender.Pipeline.PipelineStateInfo.Reason));
                 Console.Error.WriteLine("Pipeline Failed but is done");
             }
             else {
                 Console.Error.WriteLine("Pipeline is done");
+                OnDataReady();
             }
         }
 
@@ -113,28 +123,30 @@ namespace GatherInstalledApplications {
         private void pipelineExecutor_OnErrorReady(PipelineExecutor sender, ICollection<object> data) {
             foreach (object e in data) {
                 Console.Error.WriteLine(e.ToString());
-                //AppendLine("Error : " + e.ToString());
             }
         }
 
         private void FillESXInfo(ICollection<PSObject> data) {
             foreach (PSObject vmHost in data) {
-                ESXHostInfo esxHostInfo = new ESXHostInfo();
+                BuildVersion _bv = new BuildVersion();
                 VMHostImpl vmHostImpl = (VMHostImpl)vmHost.BaseObject;
-                esxHostInfo.Build = vmHostImpl.Build;
-                esxHostInfo.Version = vmHostImpl.Version;
-                esxHostInfo.Name = vmHostImpl.Name;
-                alEsxHostInfo.Add(esxHostInfo);
+                _bv.Build = vmHostImpl.Build;
+                _bv.Version = vmHostImpl.Version;
+                _bv.Name = vmHostImpl.Name;
+                _bv.hostType = HostType.ESX;
+                alEsxHostInfo.Add(_bv);
             }
         }
 
         private void FillVCInfo(ICollection<PSObject> data) {
-            vci = new VCInfo();
+            bv = new BuildVersion();
             foreach (PSObject vc in data) {
                 VMware.VimAutomation.Types.VIServer viserver = (VMware.VimAutomation.Types.VIServer)vc.BaseObject;
-                vci.Build = viserver.Build;
-                vci.Name = viserver.Name;
-                vci.Version = viserver.Version;
+                bv.Build = viserver.Build;
+                bv.Name = viserver.Name;
+                bv.Version = viserver.Version;
+                bv.hostType = HostType.VC;
+                alEsxHostInfo.Add(bv);
             }
         }
 
@@ -148,7 +160,7 @@ namespace GatherInstalledApplications {
             pipelineExecutor.OnErrorReady += new PipelineExecutor.ErrorReadyDelegate(pipelineExecutor_OnErrorReady);
             pipelineExecutor.Start();
         }
-        public void QueryESXBuildAsync(String vcServer) {
+        public void QueryVCESXBuildAsync(String vcServer) {
 
             StringBuilder sbConnectVIServer = new StringBuilder();
 
@@ -159,75 +171,6 @@ namespace GatherInstalledApplications {
             pipelineExecutor.OnDataEnd += new PipelineExecutor.DataEndDelegate(pipelineExecutor_OnDataEnd);
             pipelineExecutor.OnErrorReady += new PipelineExecutor.ErrorReadyDelegate(pipelineExecutor_OnErrorReady);
             pipelineExecutor.Start();
-
-            //}
-        }
-
-        public System.Collections.ArrayList QueryESXBuild(String vcServer) {
-            System.Collections.ArrayList alEsxHostInfo = new System.Collections.ArrayList();
-            Collection<PSObject> vmHostCollection;
-            StringBuilder sbConnectVIServer = new StringBuilder();
-            sbConnectVIServer.AppendFormat("Connect-VIServer {0}", vcServer);
-
-            pipeline = run.CreatePipeline();
-            //pipeline.StateChanged += new EventHandler<PipelineStateEventArgs>(OnPipeline_StateChanged);
-            using (pipeline) {
-                pipeline.Commands.AddScript(sbConnectVIServer.ToString());
-                pipeline.Commands.AddScript("Get-VMHost");
-                //
-
-                vmHostCollection = pipeline.Invoke();
-                foreach (PSObject vmHost in vmHostCollection) {
-
-                    ESXHostInfo esxHostInfo = new ESXHostInfo();
-                    VMHostImpl vmHostImpl = (VMHostImpl)vmHost.BaseObject;
-                    esxHostInfo.Build = vmHostImpl.Build;
-                    esxHostInfo.Version = vmHostImpl.Version;
-                    esxHostInfo.Name = vmHostImpl.Name;
-                    alEsxHostInfo.Add(esxHostInfo);
-                }
-                //pipeline.Commands.AddScript("Disconnect-VIServer -Confirm:$false");
-                //pipeline.Invoke();
-
-            }
-            
-            // = pipeline.Output.
-            
-            return alEsxHostInfo;
-        }
-
-        
-
-        public System.Collections.ArrayList RetrieveEsxBuild() {
-            System.Collections.ArrayList alEsxHostInfo = new System.Collections.ArrayList();
-            //Collection<PSObject> vmHostCollection = pipeline.Output.
-            PipelineReader<PSObject> results = pipeline.Output;
-            while( !results.EndOfPipeline ) {
-                PSObject vmHost = results.Read();
-                ESXHostInfo esxHostInfo = new ESXHostInfo();
-                VMHostImpl vmHostImpl = (VMHostImpl)vmHost.BaseObject;
-                esxHostInfo.Build = vmHostImpl.Build;
-                esxHostInfo.Version = vmHostImpl.Version;
-                esxHostInfo.Name = vmHostImpl.Name;
-                alEsxHostInfo.Add(esxHostInfo);
-            }
-            return alEsxHostInfo;
-        }
-
-        void OnPipeline_StateChanged(object sender, PipelineStateEventArgs e) {
-            
-            //Console.Error.WriteLine("PipelineStateInfo {0}", e.PipelineStateInfo.State);
-
-            if (e.PipelineStateInfo.State == PipelineState.Stopped) {
-                Console.Error.WriteLine("PipelineState.Stopped");
-            }
-
-            if (e.PipelineStateInfo.State == PipelineState.Completed) {
-                if( count++ == 1 ) {
-                    Console.Error.WriteLine("_completed == true");
-                    _completed = true;
-                }
-            }
         }
     }
 }

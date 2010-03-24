@@ -11,3 +11,69 @@
             //        vci.Version = viserver.Version;
             //    }
             //}
+            
+            public System.Collections.ArrayList QueryESXBuild(String vcServer) {
+            System.Collections.ArrayList alEsxHostInfo = new System.Collections.ArrayList();
+            Collection<PSObject> vmHostCollection;
+            StringBuilder sbConnectVIServer = new StringBuilder();
+            sbConnectVIServer.AppendFormat("Connect-VIServer {0}", vcServer);
+
+            pipeline = run.CreatePipeline();
+            //pipeline.StateChanged += new EventHandler<PipelineStateEventArgs>(OnPipeline_StateChanged);
+            using (pipeline) {
+                pipeline.Commands.AddScript(sbConnectVIServer.ToString());
+                pipeline.Commands.AddScript("Get-VMHost");
+                //
+
+                vmHostCollection = pipeline.Invoke();
+                foreach (PSObject vmHost in vmHostCollection) {
+
+                    ESXHostInfo esxHostInfo = new ESXHostInfo();
+                    VMHostImpl vmHostImpl = (VMHostImpl)vmHost.BaseObject;
+                    esxHostInfo.Build = vmHostImpl.Build;
+                    esxHostInfo.Version = vmHostImpl.Version;
+                    esxHostInfo.Name = vmHostImpl.Name;
+                    alEsxHostInfo.Add(esxHostInfo);
+                }
+                //pipeline.Commands.AddScript("Disconnect-VIServer -Confirm:$false");
+                //pipeline.Invoke();
+
+            }
+            
+            // = pipeline.Output.
+            
+            return alEsxHostInfo;
+        }
+
+        
+
+        public System.Collections.ArrayList RetrieveEsxBuild() {
+            System.Collections.ArrayList alEsxHostInfo = new System.Collections.ArrayList();
+            //Collection<PSObject> vmHostCollection = pipeline.Output.
+            PipelineReader<PSObject> results = pipeline.Output;
+            while( !results.EndOfPipeline ) {
+                PSObject vmHost = results.Read();
+                ESXHostInfo esxHostInfo = new ESXHostInfo();
+                VMHostImpl vmHostImpl = (VMHostImpl)vmHost.BaseObject;
+                esxHostInfo.Build = vmHostImpl.Build;
+                esxHostInfo.Version = vmHostImpl.Version;
+                esxHostInfo.Name = vmHostImpl.Name;
+                alEsxHostInfo.Add(esxHostInfo);
+            }
+            return alEsxHostInfo;
+        }
+               void OnPipeline_StateChanged(object sender, PipelineStateEventArgs e) {
+            
+            //Console.Error.WriteLine("PipelineStateInfo {0}", e.PipelineStateInfo.State);
+
+            if (e.PipelineStateInfo.State == PipelineState.Stopped) {
+                Console.Error.WriteLine("PipelineState.Stopped");
+            }
+
+            if (e.PipelineStateInfo.State == PipelineState.Completed) {
+                if( count++ == 1 ) {
+                    Console.Error.WriteLine("_completed == true");
+                    _completed = true;
+                }
+            }
+        }
