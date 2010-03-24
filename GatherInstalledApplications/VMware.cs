@@ -48,43 +48,80 @@ namespace GatherInstalledApplications {
 
 
         public _VMware() {
+            
             run = RunspaceFactory.CreateRunspace();
             run.RunspaceConfiguration.AddPSSnapIn("VMware.VimAutomation.Core", out warn);
             run.Open();
         }
         public _VMware(ISynchronizeInvoke invoker) {
             this.invoker = invoker;
-            run = RunspaceFactory.CreateRunspace();
-            run.RunspaceConfiguration.AddPSSnapIn("VMware.VimAutomation.Core", out warn);
-            run.Open();
+            //CreateRunspace();
         }
 
         private void pipelineExecutor_OnDataEnd(PipelineExecutor sender) {
-            if (sender.Pipeline.PipelineStateInfo.State == PipelineState.Failed) {
-                Console.Error.WriteLine("Pipeline Failed but is done");
+            try {
+                if (sender.Pipeline.PipelineStateInfo.State == PipelineState.Failed) {
+                    Console.Error.WriteLine("Pipeline Failed but is done");
+                }
+                else {
+                    Console.Error.WriteLine("Pipeline is done");
+                    OnDataReady();
+                    if (WaitQueue.Count > 0) {
+                        vCenterCount = 0;
+                        
+                        QueryVCESXBuildAsync((string)WaitQueue.Dequeue());
+
+                    }
+                }
             }
-            else {
-                Console.Error.WriteLine("Pipeline is done");
-                OnDataReady();
+            catch (Exception e) {
+                Console.Error.WriteLine("Stack Trace: {0}, Message: {1}", e.StackTrace, e.Message);
+            }
+        }
+
+        private void CreateRunspace() {
+            try {
+                
+                run = RunspaceFactory.CreateRunspace();
+                run.RunspaceConfiguration.AddPSSnapIn("VMware.VimAutomation.Core", out warn);
+                run.Open();
+            }
+            catch (Exception e) {
+                Console.Error.WriteLine("Stack Trace: {0}, Message: {1}", e.StackTrace, e.Message);
+            }
+        }
+
+        //http://www.codeproject.com/KB/threads/AsyncPowerShell.aspx
+        private void StopScript() {
+            Console.Error.WriteLine("In Stop Script...");
+            if (pipelineExecutor != null) {
+                pipelineExecutor.OnDataReady -= new PipelineExecutor.DataReadyDelegate(pipelineExecutor_OnDataReady);
+                pipelineExecutor.OnDataEnd -= new PipelineExecutor.DataEndDelegate(pipelineExecutor_OnDataEnd);
+                pipelineExecutor.Stop();
+                pipelineExecutor = null;
+                Console.Error.WriteLine("Script Stopped");
+                run.Close();
+                run = null;
             }
         }
 
         private void pipelineExecutor_OnDataReady(PipelineExecutor sender, ICollection<PSObject> data) {
-            Console.Error.WriteLine("Data Finished with {0} results", data.Count);
-            if(data.Count > 0 ) {
-                Type type = data.ElementAt<PSObject>(0).BaseObject.GetType();
-                switch (type.Name) {
-                    case "VIServerImpl":
-                        FillVCInfo(data);
-                        break;
-                    case "VMHostImpl":
-                        FillESXInfo(data);
-                        break;
+            try {
+                Console.Error.WriteLine("Data Finished with {0} results", data.Count);
+                if (data.Count > 0) {
+                    Type type = data.ElementAt<PSObject>(0).BaseObject.GetType();
+                    switch (type.Name) {
+                        case "VIServerImpl":
+                            FillVCInfo(data);
+                            break;
+                        case "VMHostImpl":
+                            FillESXInfo(data);
+                            break;
+                    }
                 }
             }
-            if (WaitQueue.Count > 0) {
-                QueryVCESXBuildAsync((string)WaitQueue.Dequeue());
-                vCenterCount = 0;
+            catch (Exception e) {
+                Console.Error.WriteLine("Stack Trace: {0}, Message: {1}", e.StackTrace, e.Message);
             }
         }
 
@@ -95,14 +132,19 @@ namespace GatherInstalledApplications {
         }
 
         private void FillESXInfo(ICollection<PSObject> data) {
-            foreach (PSObject vmHost in data) {
-                BuildVersion _bv = new BuildVersion();
-                VMHostImpl vmHostImpl = (VMHostImpl)vmHost.BaseObject;
-                _bv.Build = vmHostImpl.Build;
-                _bv.Version = vmHostImpl.Version;
-                _bv.Name = vmHostImpl.Name;
-                _bv.hostType = HostType.ESX;
-                alEsxHostInfo.Add(_bv);
+            try {
+                foreach (PSObject vmHost in data) {
+                    BuildVersion _bv = new BuildVersion();
+                    VMHostImpl vmHostImpl = (VMHostImpl)vmHost.BaseObject;
+                    _bv.Build = vmHostImpl.Build;
+                    _bv.Version = vmHostImpl.Version;
+                    _bv.Name = vmHostImpl.Name;
+                    _bv.hostType = HostType.ESX;
+                    alEsxHostInfo.Add(_bv);
+                }
+            }
+            catch (Exception e) {
+                Console.Error.WriteLine("Stack Trace: {0}, Message: {1}", e.StackTrace, e.Message);
             }
         }
 
@@ -119,6 +161,7 @@ namespace GatherInstalledApplications {
         }
 
         public void QueryVCBuildAsync(String vcServer) {
+
             StringBuilder sbConnectVIServer = new StringBuilder();
             sbConnectVIServer.AppendFormat("Connect-VIServer {0}", vcServer);
 
@@ -131,21 +174,26 @@ namespace GatherInstalledApplications {
         public void QueryVCESXBuildAsync(String vcServer) {
 
             if (vCenterCount != 0) {
-                WaitQueue.Enqueue(vcServer);
-                
+                WaitQueue.Enqueue(vcServer);   
             }
             else {
+                try {
+                    this.StopScript();
+                    this.CreateRunspace();
+                    StringBuilder sbConnectVIServer = new StringBuilder();
 
-                StringBuilder sbConnectVIServer = new StringBuilder();
-
-                sbConnectVIServer.AppendFormat("Connect-VIServer {0}\n Get-VMHost", vcServer);
-                Console.Error.WriteLine("Starting PowerCLI command");
-                pipelineExecutor = new PipelineExecutor(run, this.invoker, sbConnectVIServer.ToString());
-                pipelineExecutor.OnDataReady += new PipelineExecutor.DataReadyDelegate(pipelineExecutor_OnDataReady);
-                pipelineExecutor.OnDataEnd += new PipelineExecutor.DataEndDelegate(pipelineExecutor_OnDataEnd);
-                pipelineExecutor.OnErrorReady += new PipelineExecutor.ErrorReadyDelegate(pipelineExecutor_OnErrorReady);
-                pipelineExecutor.Start();
-                vCenterCount = 1;
+                    sbConnectVIServer.AppendFormat("Connect-VIServer {0}\n Get-VMHost", vcServer);
+                    Console.Error.WriteLine("Starting PowerCLI command");
+                    pipelineExecutor = new PipelineExecutor(run, this.invoker, sbConnectVIServer.ToString());
+                    pipelineExecutor.OnDataReady += new PipelineExecutor.DataReadyDelegate(pipelineExecutor_OnDataReady);
+                    pipelineExecutor.OnDataEnd += new PipelineExecutor.DataEndDelegate(pipelineExecutor_OnDataEnd);
+                    pipelineExecutor.OnErrorReady += new PipelineExecutor.ErrorReadyDelegate(pipelineExecutor_OnErrorReady);
+                    pipelineExecutor.Start();
+                    vCenterCount = 1;
+                }
+                catch (Exception e) {
+                    Console.Error.WriteLine("Stack Trace: {0}, Message: {1}", e.StackTrace, e.Message);
+                }
             }
         }
     }

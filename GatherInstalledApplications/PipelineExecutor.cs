@@ -96,33 +96,42 @@ namespace Codeproject.PowerShell
         /// <param name="command">The script to run</param>
         public PipelineExecutor(Runspace runSpace,ISynchronizeInvoke invoker,string command)
         {
-            this.invoker = invoker;
+            try {
+                this.invoker = invoker;
 
-            // initialize delegates
-            synchDataReady = new DataReadyDelegate(SynchDataReady);
-            synchDataEnd = new DataEndDelegate(SynchDataEnd);
-            synchErrorReady = new ErrorReadyDelegate(SynchErrorReady);
+                // initialize delegates
+                synchDataReady = new DataReadyDelegate(SynchDataReady);
+                synchDataEnd = new DataEndDelegate(SynchDataEnd);
+                synchErrorReady = new ErrorReadyDelegate(SynchErrorReady);
 
-            // initialize event members
-            stopEvent = new ManualResetEvent(false);
-            waitHandles = new WaitHandle[] { null, stopEvent };
-            // create a pipeline and feed it the script text
-            pipeline = runSpace.CreatePipeline(command);
+                // initialize event members
+                stopEvent = new ManualResetEvent(false);
+                waitHandles = new WaitHandle[] { null, stopEvent };
+                // create a pipeline and feed it the script text
+                pipeline = runSpace.CreatePipeline(command);
 
-            // we'll listen for script output data by way of the DataReady event
-            pipeline.Output.DataReady += new EventHandler(Output_DataReady);
-            pipeline.Error.DataReady += new EventHandler(Error_DataReady);
+                // we'll listen for script output data by way of the DataReady event
+                pipeline.Output.DataReady += new EventHandler(Output_DataReady);
+                pipeline.Error.DataReady += new EventHandler(Error_DataReady);
+            }
+            catch (Exception e) {
+                Console.Error.WriteLine("Stack Trace: {0}, Message: {1}", e.StackTrace, e.Message);
+            }
         }
 
         void Error_DataReady(object sender, EventArgs e)
         {
-            // fetch all available objects
-            Collection<object> data = pipeline.Error.NonBlockingRead();
+            try {
+                // fetch all available objects
+                Collection<object> data = pipeline.Error.NonBlockingRead();
 
-            // if there were any, invoke the ErrorReady event
-            if (data.Count > 0)
-            {
-                StoppableInvoke(synchErrorReady, new object[] { this, data });
+                // if there were any, invoke the ErrorReady event
+                if (data.Count > 0) {
+                    StoppableInvoke(synchErrorReady, new object[] { this, data });
+                }
+            }
+            catch (Exception ex) {
+                Console.Error.WriteLine("Stack Trace: {0}, Message: {1}", ex.StackTrace, ex.Message);
             }
         }
 
@@ -131,13 +140,17 @@ namespace Codeproject.PowerShell
         /// </summary>
         public void Start()
         {
-            if (pipeline.PipelineStateInfo.State == PipelineState.NotStarted)
-            {
-                // close the pipeline input. If you forget to do 
-                // this it won't start processing the script.
-                pipeline.Input.Close();
-                // invoke the pipeline. This will cause it to process the script in the background.
-                pipeline.InvokeAsync();
+            try {
+                if (pipeline.PipelineStateInfo.State == PipelineState.NotStarted) {
+                    // close the pipeline input. If you forget to do 
+                    // this it won't start processing the script.
+                    pipeline.Input.Close();
+                    // invoke the pipeline. This will cause it to process the script in the background.
+                    pipeline.InvokeAsync();
+                }
+            }
+            catch (Exception e) {
+                Console.Error.WriteLine("Stack Trace: {0}, Message: {1}", e.StackTrace, e.Message);
             }
         }
 
@@ -167,9 +180,15 @@ namespace Codeproject.PowerShell
         /// <returns>The <see cref="Object"/> returned by the asynchronous operation</returns>
         private object StoppableInvoke(Delegate method, object[] args)
         {
-            IAsyncResult asyncResult = invoker.BeginInvoke(method, args);
-            waitHandles[0] = asyncResult.AsyncWaitHandle;
-            return (WaitHandle.WaitAny(waitHandles)==0) ? invoker.EndInvoke(asyncResult) : null;
+            try {
+                IAsyncResult asyncResult = invoker.BeginInvoke(method, args);
+                waitHandles[0] = asyncResult.AsyncWaitHandle;
+                return (WaitHandle.WaitAny(waitHandles) == 0) ? invoker.EndInvoke(asyncResult) : null;
+            }
+            catch (Exception e) {
+                Console.Error.WriteLine("Stack Trace: {0}, Message: {1}", e.StackTrace, e.Message);
+                return null;
+            }   
         }
 
         /// <summary>
@@ -179,20 +198,24 @@ namespace Codeproject.PowerShell
         /// <param name="e"></param>
         private void Output_DataReady(object sender, EventArgs e)
         {
-            // fetch all available objects
-            Collection<PSObject> data = pipeline.Output.NonBlockingRead();
+            try {
+                // fetch all available objects
+                Collection<PSObject> data = pipeline.Output.NonBlockingRead();
 
-            // if there were any, invoke the DataReady event
-            if (data.Count > 0)
-            {
-                StoppableInvoke(synchDataReady, new object[] { this, data });
-            }
+                // if there were any, invoke the DataReady event
+                if (data.Count > 0) {
+                    StoppableInvoke(synchDataReady, new object[] { this, data });
+                }
 
-            if (pipeline.Output.EndOfPipeline)
-            {
-                // we're done! invoke the DataEnd event
-                StoppableInvoke(synchDataEnd, new object[] { this });
+                if (pipeline.Output.EndOfPipeline) {
+                    // we're done! invoke the DataEnd event
+                    StoppableInvoke(synchDataEnd, new object[] { this });
+                }
             }
+            catch (Exception ex) {
+                Console.Error.WriteLine("Stack Trace: {0}, Message: {1}", ex.StackTrace, ex.Message);
+            }
+            
         }
 
         /// <summary>
@@ -203,10 +226,14 @@ namespace Codeproject.PowerShell
         /// <param name="data"></param>
         private void SynchDataReady(PipelineExecutor sender, ICollection<PSObject> data)
         {
-            DataReadyDelegate delegateDataReadyCopy = OnDataReady;
-            if (delegateDataReadyCopy != null)
-            {
-                delegateDataReadyCopy(sender, data);
+            try {
+                DataReadyDelegate delegateDataReadyCopy = OnDataReady;
+                if (delegateDataReadyCopy != null) {
+                    delegateDataReadyCopy(sender, data);
+                }
+            }
+            catch (Exception ex) {
+                Console.Error.WriteLine("Stack Trace: {0}, Message: {1}", ex.StackTrace, ex.Message);
             }
         }
 
@@ -218,10 +245,14 @@ namespace Codeproject.PowerShell
         /// <param name="data"></param>
         private void SynchDataEnd(PipelineExecutor sender)
         {
-            DataEndDelegate delegateDataEndCopy = OnDataEnd;
-            if (delegateDataEndCopy != null)
-            {
-                delegateDataEndCopy(sender);
+            try {
+                DataEndDelegate delegateDataEndCopy = OnDataEnd;
+                if (delegateDataEndCopy != null) {
+                    delegateDataEndCopy(sender);
+                }
+            }
+            catch (Exception ex) {
+                Console.Error.WriteLine("Stack Trace: {0}, Message: {1}", ex.StackTrace, ex.Message);
             }
         }
 
@@ -233,10 +264,14 @@ namespace Codeproject.PowerShell
         /// <param name="data"></param>
         private void SynchErrorReady(PipelineExecutor sender, ICollection<object> data)
         {
-            ErrorReadyDelegate delegateErrorReadyCopy = OnErrorReady;
-            if (delegateErrorReadyCopy != null)
-            {
-                delegateErrorReadyCopy(sender, data);
+            try {
+                ErrorReadyDelegate delegateErrorReadyCopy = OnErrorReady;
+                if (delegateErrorReadyCopy != null) {
+                    delegateErrorReadyCopy(sender, data);
+                }
+            }
+            catch (Exception ex) {
+                Console.Error.WriteLine("Stack Trace: {0}, Message: {1}", ex.StackTrace, ex.Message);
             }
         }
 
