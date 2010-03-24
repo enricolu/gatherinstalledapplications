@@ -1,3 +1,5 @@
+//http://www.codeproject.com/KB/threads/AsyncPowerShell.aspx
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

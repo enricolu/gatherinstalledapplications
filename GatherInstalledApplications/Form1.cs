@@ -17,6 +17,8 @@ namespace GatherInstalledApplications {
         private String psePatches = "";
         private System.Collections.ArrayList alAppNameVer = null;
         private _VMware vmware;
+        private System.Collections.Hashtable htBuild = null;
+        System.IO.StreamReader sr;
 
         public Form1() {
             InitializeComponent();
@@ -26,6 +28,20 @@ namespace GatherInstalledApplications {
             //this.simpleButtonStart.Enabled = false;
             
             sw = new System.IO.StreamWriter("appver.csv");
+            sr = new System.IO.StreamReader("build.csv");
+            FillBuildHashTable();
+        }
+
+        private void FillBuildHashTable() {
+            htBuild = new System.Collections.Hashtable();
+            String buf;
+
+            while ((buf = sr.ReadLine()) != null) {
+                String[] arraySplit = buf.Split(',');
+                if (arraySplit.Length == 2) {
+                    htBuild.Add(arraySplit[0], arraySplit[1]);
+                }
+            }
         }
 
         private void simpleButtonStart_Click(object sender, EventArgs e) {
@@ -62,19 +78,22 @@ namespace GatherInstalledApplications {
             progressBarControl1.Update();
         }
         private void WriteToCSV(_VMware.BuildVersion bv) {
+            String updateVersion = (String) htBuild[bv.Build];
+
+
             switch(bv.hostType) {
                 case _VMware.HostType.ESX:
-                    sw.WriteLine("{0},{1},{2},{3},{4}", "VMware", "VMware ESX",bv.Version, bv.Build, bv.Name);
+                    sw.WriteLine("{0},{1},{2},{3},{4}", "VMware", "VMware ESX",bv.Version + "-" + bv.Build,updateVersion , bv.Name);
                     sw.Flush();
                     break;
                 case _VMware.HostType.VC:
-                    sw.WriteLine("{0},{1},{2},{3},{4}", "VMware", "VMware vCenter", bv.Version, bv.Build, bv.Name);
+                    sw.WriteLine("{0},{1},{2},{3},{4}", "VMware", "VMware vCenter", bv.Version + "-" + bv.Build, updateVersion,  bv.Name);
                     sw.Flush();
                     break;
             }
         }
         private void WriteToCSV(RegistryQuery.AppNameVer anv, String server, String appVendor, ProductUpdate pu) {
-
+            String servicePack = (String)htBuild[anv.DisplayVersion];
             switch (pu) {
                 case ProductUpdate.DDC:
                     sw.WriteLine("{0},{1},{2},{3},{4}", appVendor, anv.DisplayName, anv.DisplayVersion, ddcPatches, server);
@@ -85,7 +104,7 @@ namespace GatherInstalledApplications {
                     sw.Flush();
                     break;
                 case ProductUpdate.NONE:
-                    sw.WriteLine("{0},{1},{2},,{3}", appVendor, anv.DisplayName, anv.DisplayVersion, server);
+                    sw.WriteLine("{0},{1},{2},{3},{4}", appVendor, anv.DisplayName, anv.DisplayVersion, servicePack ,server);
                     sw.Flush();
                     break;
             }

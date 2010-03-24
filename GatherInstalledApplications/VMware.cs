@@ -13,40 +13,10 @@ using Codeproject.PowerShell;
 using System.Threading;
 
 using System.ComponentModel;
-//vCenter Server 4.0.0 | 05 May 2009 | Build 162902
-
-//Latest Released Version: 2.5 Update 6 | 01/29/10 | 227666 
-
-//2.5 Update 5 | 07/10/09 | 174791 
-//VirtualCenter 2.5 Server Update 4 | 23 Feb 2009 | Build 147633 (English version)
-//VirtualCenter 2.5 Server Update 3 | 03 Oct 2008 | Build 119598 (English version)
-//VirtualCenter 2.5 Server Update 2 | 25 July 2008 | Build 104217 (English version)
-//VirtualCenter 2.5 Server Update 1 | 10 Apr 2008 | Build 84767 (English version)
-//VirtualCenter 2.5 Server | 12/10/2007 | Build 64201
-
-//VMware ESX Server 4.0 | 21 May 2009 | Build 164009
-
-//Mware ESX 3.5 Update 5  Build Number	207095
-//VMware ESX Server 3.5 Update 4 | 30 Mar 2009 | Build 153875
-//VMware ESX Server 3.5 Update 3 | 06 Nov 2008 | Build 123630
-//VMware ESX Server 3.5 Update 2 | 13 Aug 2008 | Build 110268
-//VMware ESX Server 3.5 Update 1 | 10 Apr 2008 | Build 82663
-//VMware ESX Server 3.5 | 02/20/2008 | Build 64607
-
-
-
 //http://www.codeproject.com/KB/threads/AsyncPowerShell.aspx
-
-
-
-
 namespace GatherInstalledApplications {
     public class _VMware
     {
-
-        //public delegate void DataReadyDelegate(PipelineExecutor sender, ICollection<PSObject> data);
-        //public event DataReadyDelegate OnDataReady;
-        //private DataReadyDelegate synchDataReady;
 
         public enum HostType { VC, ESX };
         public struct BuildVersion {
@@ -54,19 +24,16 @@ namespace GatherInstalledApplications {
             public HostType hostType;
         }
 
-        //public struct VCInfo {
-        //    public String Name, Build, Version;
-        //}
+        private int vCenterCount = 0;
 
         private PSSnapInException warn;
         private Runspace run;
-        //private Pipeline pipeline;
-        //private Boolean _completed = false;
-        //private int count = 0;
+
         private ISynchronizeInvoke invoker;
 
         private PipelineExecutor pipelineExecutor;
         private _VMware.BuildVersion bv;
+        private System.Collections.Queue WaitQueue = new System.Collections.Queue();
 
         System.Collections.ArrayList alEsxHostInfo = new System.Collections.ArrayList();
 
@@ -79,9 +46,6 @@ namespace GatherInstalledApplications {
             get { return bv; }
         }
 
-        //public Boolean CompletedInvoke {
-        //    get { return _completed; }
-        //}
 
         public _VMware() {
             run = RunspaceFactory.CreateRunspace();
@@ -117,6 +81,10 @@ namespace GatherInstalledApplications {
                         FillESXInfo(data);
                         break;
                 }
+            }
+            if (WaitQueue.Count > 0) {
+                QueryVCESXBuildAsync((string)WaitQueue.Dequeue());
+                vCenterCount = 0;
             }
         }
 
@@ -162,15 +130,23 @@ namespace GatherInstalledApplications {
         }
         public void QueryVCESXBuildAsync(String vcServer) {
 
-            StringBuilder sbConnectVIServer = new StringBuilder();
+            if (vCenterCount != 0) {
+                WaitQueue.Enqueue(vcServer);
+                
+            }
+            else {
 
-            sbConnectVIServer.AppendFormat("Connect-VIServer {0}\n Get-VMHost", vcServer);
-            Console.Error.WriteLine("Starting PowerCLI command");
-            pipelineExecutor = new PipelineExecutor(run, this.invoker, sbConnectVIServer.ToString());
-            pipelineExecutor.OnDataReady += new PipelineExecutor.DataReadyDelegate(pipelineExecutor_OnDataReady);
-            pipelineExecutor.OnDataEnd += new PipelineExecutor.DataEndDelegate(pipelineExecutor_OnDataEnd);
-            pipelineExecutor.OnErrorReady += new PipelineExecutor.ErrorReadyDelegate(pipelineExecutor_OnErrorReady);
-            pipelineExecutor.Start();
+                StringBuilder sbConnectVIServer = new StringBuilder();
+
+                sbConnectVIServer.AppendFormat("Connect-VIServer {0}\n Get-VMHost", vcServer);
+                Console.Error.WriteLine("Starting PowerCLI command");
+                pipelineExecutor = new PipelineExecutor(run, this.invoker, sbConnectVIServer.ToString());
+                pipelineExecutor.OnDataReady += new PipelineExecutor.DataReadyDelegate(pipelineExecutor_OnDataReady);
+                pipelineExecutor.OnDataEnd += new PipelineExecutor.DataEndDelegate(pipelineExecutor_OnDataEnd);
+                pipelineExecutor.OnErrorReady += new PipelineExecutor.ErrorReadyDelegate(pipelineExecutor_OnErrorReady);
+                pipelineExecutor.Start();
+                vCenterCount = 1;
+            }
         }
     }
 }

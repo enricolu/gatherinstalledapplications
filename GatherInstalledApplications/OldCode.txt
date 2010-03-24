@@ -1,4 +1,18 @@
-﻿            //pipeline = run.CreatePipeline();
+﻿
+       //public struct VCInfo {
+        //    public String Name, Build, Version;
+        //}
+        
+                //private Pipeline pipeline;
+        //private Boolean _completed = false;
+        //private int count = 0;
+        
+        
+        //public Boolean CompletedInvoke {
+        //    get { return _completed; }
+        //}
+
+            //pipeline = run.CreatePipeline();
 
             //using (pipeline) {
             //    pipeline.Commands.AddScript(sbConnectVIServer.ToString());
