@@ -1,0 +1,1 @@
+Gather installed applications via registry for version and patch levels
